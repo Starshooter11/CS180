@@ -1,0 +1,4 @@
+# Site lives at https://starshooter11.github.io/CS180/ , so every shared link
+# in _includes needs the /CS180 prefix. {{ site.baseurl }} supplies it.
+baseurl: "/CS180"
+url: "https://starshooter11.github.io"

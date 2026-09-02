@@ -1,0 +1,61 @@
+<style>
+    header {
+        /* own text color: pages set their own body color, and without this
+           the bar inherits it (black-on-black on any light-text page) */
+        color: #f1f5f9;
+        display: flex;
+        justify-content: space-between; 
+        align-items: center;
+        padding: 12px 20px;
+        background: rgba(0, 0, 0, 1);
+        position: sticky;
+        top: 0;
+        z-index: 10;
+    }
+
+    .brand {
+        font-size: 20px;
+        font-weight: bold;
+    }
+
+    .dropdown {
+        position: relative;
+    }
+
+    .dropdown ul {
+        position: absolute; 
+        right: 0;
+        margin: 6px 0 0;
+        padding: 6px 0;
+        min-width: 170px;
+        list-style: none;
+        background: rgba(0, 0, 0, 1);
+        border-radius: 8px;
+        text-align: left;
+    }
+
+    .dropdown a {
+        display: block;
+        padding: 8px 14px;
+        color: #93c5fd;
+        text-decoration: none;
+        white-space: nowrap;
+    }
+
+    .dropdown a:hover {
+        background: rgba(255, 255, 255, 0.12);
+    }
+</style>
+
+<header>
+    <span class="brand">CS180</span>
+    <nav>
+        <details class="dropdown">
+            <summary>Projects</summary>
+            <ul>
+                <li><a href="{{ site.baseurl }}/Project0/">Project 0</a></li>
+                <li><a href="{{ site.baseurl }}/1/">Project 1</a></li>
+            </ul>
+        </details>
+    </nav>
+</header>
