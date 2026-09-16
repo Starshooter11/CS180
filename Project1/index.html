@@ -1,0 +1,193 @@
+﻿---
+---
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Project 1</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;  
+            box-sizing: border-box;
+            min-height: 100vh;
+            /* gradient background */
+            background-image: linear-gradient(160deg, #03d0c080 0%, #2bb0d080 50%, #3a233880 100%);
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+        }
+
+        main {
+            padding: 20px;
+        }
+
+        img{
+            max-width: 100%;
+            height: auto;
+        }
+
+        video {
+            max-width: 640px;
+            width: 100%;
+        }
+
+        .gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 12px;
+            margin: 16px 0;
+        }
+
+        .gallery figure {
+            margin: 0;
+            text-align: center;
+            max-width: 450px; /* maximum width */
+            max-height: 450px; /* maximum height */
+        }
+
+        .gallery figcaption {
+            margin-top: 6px;
+            font-size: 14px;
+            text-align: center;
+        }
+
+    </style>
+</head>
+<body>
+    {% include header.html %}
+
+    <main>
+        <h1>Project 1</h1>
+        <h2>Images of the Russian Empire:</h2>
+        <h3>Colorizing the Prokudin-Gorskii photo collection</h3>
+        <h4>Background</h4>
+        <p>
+            Sergei Mikhailovich Prokudin-Gorskii (1863-1944) [Сергей Михайлович Прокудин-Горский, to his Russian friends] was a man convinced that color photography was the future.
+            Winning the Tzar's special permission to travel across the vast Russian Empire and take color photographs of everything he saw, Prokudin-Gorskii photographed quite literally everything, including the only color portrait of Leo Tolstoy.
+            His method was simple, and can be seen in any sort of digital media editing software today: record three exposures of every scene onto a glass plate using a red, a green, and a blue filter.
+            His vision of the future included special projectors to be installed in "multimedia" classrooms all across Russia where the children would be able to learn about their vast country.
+            Unfortunately, his plans were never realized as he left Russia in 1918, right after the revolution, never to return again.
+        </p>
+        <p>
+            In 1948, Prokudin-Gorskii's RGB plage negatives, capturing the last years of the Russian Empire, were purchased by the Library of Congress.
+            The LoC has recently digitized the negatives and made them available on-line.
+        </p>
+
+        <h4>The actual task</h4>
+        <p>So of course, this project's goal is to combine the RGB negatives together and make a fully-colored photo! </p>
+
+        <h4>The basic idea(for small images)</h4>
+        <p>After splitting the images into 3(corresponding to B, G, and R filters), I then crop them to get rid of the border pixels. My code crops 15% off on each side. I also take the B image as my base.</p>
+        <p>Next, I shift the pixels in the G and R images in every direction between (-20, -20) and (20, 20), compare the pixels to B and, using L2 as the scoring algorithim, and obtain the lowest score(which equates to highest similarity).</p>
+        <p>Corresponding to the lowest score is the desired shift. Shift G and R accordingly and then layer them right on top of B. Tada! Full colored photos!</p>
+        <div class="gallery">
+            <figure>
+                <img src="proj1_output/cathedral.png" alt="cathedral img">
+                <figcaption>RGB combined image of the cathedral</figcaption>
+                <figcaption>G shift: (2, 5), R shift: (3, 12)</figcaption>
+            </figure>
+            <figure>
+                <img src="proj1_output/monastery.png" alt="monastery img">
+                <figcaption>RGB combined image of the monastery</figcaption>
+                <figcaption>G shift: (2, -3), R shift: (2, 3)</figcaption>
+            </figure>
+
+            <figure>
+                <img src="proj1_output/tobolsk.png" alt="tobolsk img">
+                <figcaption>RGB combined image of the tobolsk</figcaption>
+                <figcaption>G shift: (3, 3), R shift: (3, 6)</figcaption>
+            </figure>
+        </div>
+        <h4>The next idea(for larger images)</h4>
+        <p>Obviously, this gets really, really slow for larger images as not only do you check more pixels per direction, but you need to check around 400 directions! What a pain.</p>
+        <p>The solution? Image pyramid!</p>
+        <p>Basically, we downsample the image down to a reasonable size, check the 400 directions there, and then upsample it while checking around 4 directions each time</p>
+        <p>This is because downsampling makes 4 pixels into 1 which can cause errors that propogate up through upsampling. </p>
+
+        <div class="gallery">
+            <figure>
+                <img src="proj1_output/church.png" alt="churchimg">
+                <figcaption>RGB combined image of the church</figcaption>
+                <figcaption>G shift: (4, 25), R shift: (-4, 58)</figcaption>
+            </figure>
+            <figure>
+                <img src="proj1_output/harvesters.png" alt="harvesterimg">
+                <figcaption>RGB combined image of the harvesters</figcaption>
+                <figcaption>G shift: (17, 59), R shift: (13, 124)</figcaption>
+            </figure>
+            <figure>
+                <img src="proj1_output/icon.png" alt="iconimg">
+                <figcaption>RGB combined image of the icon</figcaption>
+                <figcaption>G shift: (17, 41), R shift: (23, 89)</figcaption>
+            </figure>
+            <figure>
+                <img src="proj1_output/ilemselga.png" alt="ilemselgaimg">
+                <figcaption>RGB combined image of the ilemselga</figcaption>
+                <figcaption>G shift: (7, 40), R shift: (11, 130)</figcaption>
+            </figure>
+            <figure>
+                <img src="proj1_output/melons.png" alt="melonsimg">
+                <figcaption>oRGB combined image of the melons</figcaption>
+                <figcaption>G shift: (10, 81), R shift: (14, 178)</figcaption>
+            </figure>
+            <figure>
+                <img src="proj1_output/religous_painting.png" alt="religious paintingimg">
+                <figcaption>RGB combined image of the religous painting</figcaption>
+                <figcaption>G shift: (3, 28), R shift: (7, 69)</figcaption>
+            </figure>
+            <figure>
+                <img src="proj1_output/self_portrait.png" alt="selfportraitimg">
+                <figcaption>RGB combined image of the self portrait</figcaption>
+                <figcaption>G shift: (29, 78), R shift: (37, 176)</figcaption>
+            </figure>
+            <figure>
+                <img src="proj1_output/siren.png" alt="siren img">
+                <figcaption>RGB combined image of the siren</figcaption>
+                <figcaption>G shift: (-6, 50), R shift: (-25, 96)</figcaption>
+            </figure>
+            <figure>
+                <img src="proj1_output/three_generations.png" alt="three generations img">
+                <figcaption>RGB combined image of the three generations</figcaption>
+                <figcaption>G shift: (14, 52), R shift: (11, 111)</figcaption>
+            </figure>
+            <figure>
+                <img src="proj1_output/wharf.png" alt="wharf img">
+                <figcaption>RGB combined image of the siren</figcaption>
+                <figcaption>G shift: (-7, 15), R shift: (-16, 82)</figcaption>
+            </figure>
+            <figure>
+                <img src="proj1_output/siren.png" alt="siren img">
+                <figcaption>RGB combined image of the siren</figcaption>
+                <figcaption>G shift: (-6, 50), R shift: (-25, 96)</figcaption>
+            </figure>
+            <figure>
+                <img src="proj1_output/makhrovye_maki.png" alt="makhrovye_maki img">
+                <figcaption>RGB combined image of the makhrovye maki</figcaption>
+                <figcaption>G shift: (8, 9), R shift: (14, 60)</figcaption>
+            </figure>
+            <figure>
+                <img src="proj1_output/vodopad_girvas.png" alt="vodopad_girvas img">
+                <figcaption>RGB combined image of the vodopad girvas</figcaption>
+                <figcaption>G shift: (-2, 14), R shift: (-3, 80)</figcaption>
+            </figure>
+            <figure>
+                <img src="proj1_output/zakat.png" alt="zakat img">
+                <figcaption>RGB combined image of the zakat</figcaption>
+                <figcaption>G shift: (-41, 75), R shift: (-68, 114)</figcaption>
+            </figure>
+        </div>
+        <p>However, this alone doesn't work for every picture.</p>
+        <div class="gallery">
+            <figure>
+                <img src="proj1_output/emir.png" alt="emir img">
+                <figcaption>RGB combined image of the emir</figcaption>
+                <figcaption>G shift: (24, 49), R shift: (44, 66)</figcaption>
+            </figure>
+        </div>
+        <p>This is because something inherent to the negatives themselves can bias or affect the L2 score. Among them are differing contrast ranges, brightness, or even the color balance.</p>
+        <p>While I don't tackle these problems in this project, it's good to think about why some images are more prone to being distorted than others with just my code alone.</p>
+    </main>
+</body>
+</html>
