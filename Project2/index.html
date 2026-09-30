@@ -1,0 +1,459 @@
+﻿---
+---
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Project 1</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;  
+            box-sizing: border-box;
+            min-height: 100vh;
+            /* gradient background */
+            background-image: linear-gradient(160deg, #03d0c080 0%, #2bb0d080 50%, #3a233880 100%);
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+        }
+
+        main {
+            padding: 20px;
+        }
+
+        img{
+            max-width: 100%;
+            height: auto;
+        }
+
+        video {
+            max-width: 640px;
+            width: 100%;
+        }
+
+        .gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 12px;
+            margin: 16px 0;
+        }
+
+        .gallery figure {
+            margin: 0;
+            text-align: center;
+            max-width: 450px; /* maximum width */
+            max-height: 450px; /* maximum height */
+        }
+
+        .gallery figcaption {
+            margin-top: 6px;
+            font-size: 14px;
+            text-align: center;
+        }
+
+        .gallery figure img {
+            display: block;
+            width: 80%;
+            aspect-ratio: 1 / 1;
+            object-fit: contain;
+        }
+
+    </style>
+</head>
+<body>
+    {% include header.html %}
+
+    <main>
+        <h1>Project 2</h1>
+        <h2>Part 1: Fun with Filters</h2>
+        <p>For this project, Dx = [1, 0, -1] and Dy = Dx^T</p>
+        <h3>Part1.1: Convolutions from Scratch</h3>
+        <p>A convolution is when a matrix, the kernel, slides over an image's matrix of pixels and changes these values based on its neighbors. Using Dx and Dy, we can convolve an image as such:</p>
+        <div class="gallery">
+            <figure>
+                <img src="proj2_data/self.jpg" alt="self">
+                <figcaption>base photo</figcaption>
+            </figure>
+            <figure>
+                <img src="proj2_output/selfSDx2.jpg" alt="">
+                <figcaption>Dx convolution</figcaption>
+            </figure>
+            <figure>
+                <img src="proj2_output/selfSDy2.jpg" alt="">
+                <figcaption>Dy convolution</figcaption>
+            </figure>
+            <figure>
+                <img src="proj2_output/selfS2.jpg" alt="">
+                <figcaption>box9 convolution</figcaption>
+            </figure>
+        </div>
+        <p>Obviously, the box part isn't that noticeable when the image is relatively large. Here's a smaller one.</p>
+        <div class="gallery">
+            <figure>
+                <img src="proj2_data/musashi.webp" alt="self">
+                <figcaption>base photo</figcaption>
+            </figure>
+            <figure>
+                <img src="proj2_output/musashiSDx2.jpg" alt="">
+                <figcaption>Dx convolution</figcaption>
+            </figure>
+            <figure>
+                <img src="proj2_output/musashiSDy2.jpg" alt="">
+                <figcaption>Dy convolution</figcaption>
+            </figure>
+            <figure>
+                <img src="proj2_output/musashiS2.jpg" alt="">
+                <figcaption>box9 convolution</figcaption>
+            </figure>
+        </div>
+
+        <h3>Part1.2: Finite Difference Operator</h3>
+        <p>Next, we can make an edge image using just the Dx and Dy convolutions.</p>
+        <p>First, we convolve with the two vectors.</p>
+
+        <div class="gallery">
+            <figure>
+                <img src="proj2_data/cameraman.png" alt="self">
+                <figcaption>base photo</figcaption>
+            </figure>
+            <figure>
+                <img src="proj2_output/cameramanDx.png" alt="">
+                <figcaption>Dx convolution</figcaption>
+            </figure>
+            <figure>
+                <img src="proj2_output/cameramanDy.png" alt="">
+                <figcaption>Dy convolution</figcaption>
+            </figure>
+        </div>
+        <p> Then we subtract the two and, surpressing values less than .27, get an edge image. This .27 is just an arbitray number I think works best after testing a bunch of values.</p>
+        <div class="gallery">
+            <figure>
+                <img src="proj2_output/cameramanMag.png" alt="self">
+                <figcaption>Magnitude</figcaption>
+            </figure>
+            <figure>
+                <img src="proj2_output/cameramanEdges_27.png" alt="">
+                <figcaption>Surpressed < .27</figcaption>
+            </figure>
+        </div>
+        <p>Obviously, there's a lot of noise and it'd be much better if we could somehow get rid of this noise first....</p>
+        <h3>Part1.3: Derivative of Gaussian (DoG) Filter</h3>
+        <p>So, let's blur it first! Noise gets reduced and edges, generally, won't be lost. We'll smooth the image with a Gaussian filter then do all the same things as before.</p>
+        <div class="gallery">
+            <figure>
+                <img src="proj2_data/cameraman.png" alt="self">
+                <figcaption>base photo</figcaption>
+            </figure>
+            <figure>
+                <img src="proj2_output/G_cameraman.png" alt="">
+                <figcaption>Gaussian filter applied</figcaption>
+            </figure>
+            <figure>
+                <img src="proj2_output/G_cameramanDx.png" alt="">
+                <figcaption>Dx convolution</figcaption>
+            </figure>
+            <figure>
+                <img src="proj2_output/G_cameramanDy.png" alt="">
+                <figcaption>Dy convolution</figcaption>
+            </figure>
+            <figure>
+                <img src="proj2_output/G_cameramanMag.png" alt="">
+                <figcaption>Magnitude</figcaption>
+            </figure>
+            <figure>
+                <img src="proj2_output/G_cameramanEdges_27.png" alt="">
+                <figcaption>Suppressed < .27</figcaption>
+            </figure>
+        </div>
+        <p>Of course, mathematically, it doesn't actually matter what order we apply these convolutions in. So convolving the Gaussian with Dx and Dy and then the image produces the same result.</p>
+        <div class="gallery">
+            <figure>
+                <img src="proj2_output/G_cameramanDoGx.png" alt="">
+                <figcaption>Gaussian+Dx convolution</figcaption>
+            </figure>
+            <figure>
+                <img src="proj2_output/G_cameramanDoGy.png" alt="">
+                <figcaption>Gaussian+Dy convolution</figcaption>
+            </figure>
+            <figure>
+                <img src="proj2_output/G_cameramanDoG_mag.png" alt="">
+                <figcaption>Magnitude</figcaption>
+            </figure>
+            <figure>
+                <img src="proj2_output/G_cameramanMod.png" alt="">
+                <figcaption>Suppressed < .27</figcaption>
+            </figure>
+        </div>
+
+        <h2>Part 2: Fun with frequencies</h2>
+        <p>
+            Among the first things that pop up most often in image editing options is sharpening and blurring. Remember how the Gaussian filter blurs things? Well, as it turns out, if you remove the blurred parts(cough low pass filter cough) from the image, you get the high pass version! Then, we readd this high pass version(multiplied by an alpha to control how much we're adding) back to the image and we obtain the sharpened version!
+            Here's the Taj Mahal:
+        </p>
+        <div class="gallery">
+            <figure>
+                <img src="proj2_data/taj.jpg" alt="">
+                <figcaption>Original Taj Mahal photo</figcaption>
+            </figure>
+            <figure>
+                <img src="proj2_output/taj5.jpg" alt="">
+                <figcaption>Sharpened version</figcaption>
+            </figure>
+        </div>
+        <p>
+            Here's photo that I first blurred, and then sharpened again!
+        </p>
+        <div class="gallery">
+            <figure>
+                <img src="proj2_data/athena_comfy.jpg" alt="">
+                <figcaption>Athena, who's currently in a very comfortable position</figcaption>
+            </figure>
+            <figure>
+                <img src="proj2_output/athena_comfyblurred.jpg" alt="">
+                <figcaption>Blurred</figcaption>
+            </figure>
+            <figure>
+                <img src="proj2_output/athena_comfy40.jpg" alt="">
+                <figcaption>Sharpened</figcaption>
+            </figure>
+        </div>
+
+        <h3>Part2.2: Hybrid Images</h3>
+        <p>
+            Alright, as the title already gave away, time to make hybrid images! Basically, these are images that look predominantely like one object when viewed up close, but look like another when viewed far away.
+            This is because high frequency tends to dominante at close distances while low frequency dominates at a distance. FOr the purposes of this project, all images are taken in grayscale.
+            See below as an example.
+        </p>
+
+        <div class="gallery">
+            <figure>
+                <img src="proj2_data/nutmeg.jpg" alt="">
+                <figcaption>First Image</figcaption>
+            </figure>
+            <figure>
+                <img src="proj2_data/DerekPicture.jpg" alt="">
+                <figcaption>Second Image</figcaption>
+            </figure>
+            <figure>
+                <img src="proj2_output/nutmeg_DerekPicture.jpg" alt="">
+                <figcaption>Combined</figcaption>
+            </figure>
+        </div>
+        <p>Here's an example using stickers from a discord server.</p>
+        <div class="gallery">
+            <figure>
+                <img src="proj2_data/pepe_heart.jpg" alt="">
+                <figcaption>Pepe Heart, a well known figure</figcaption>
+            </figure>
+            <figure>
+                <img src="proj2_data/seibah_heart.jpg" alt="">
+                <figcaption>Seibah Heart, a variation within Fate communities</figcaption>
+            </figure>
+            <figure>
+                <img src="proj2_output/seibah_heart_pepe_heart.jpg" alt="">
+                <figcaption>Combined</figcaption>
+            </figure>
+        </div>
+        <p>
+            And of course, another example, this time with the process shown through frequency analysis.
+            This inludes the log magnitude of the Fourier transform of the two input images, the filtered images, and the hybrid image.
+        </p>
+        <div class="gallery">
+            <figure>
+                <img src="proj2_data/muppet.jpg" alt="">
+                <figcaption>The Muppet Sideeye</figcaption>
+            </figure>
+            <figure>
+                <img src="proj2_data/sideeye_jess.jpg" alt="">
+                <figcaption>Uh...another sideeye</figcaption>
+            </figure>
+            <figure>
+                <img src="proj2_output/muppet_sideeye_jess.jpg" alt="">
+                <figcaption>Combined</figcaption>
+            </figure>
+        </div>
+
+        <div class="gallery">
+            <img src="proj2_output/muppetsideeye_jess.jpg" alt="">
+        </div>
+
+        <h2>The Oraple Journey</h2>
+        <h3>Part2.3: Gaussian and Laplacian Stacks</h3>
+        <p>
+            Here, I implemented a Gaussian and a Laplacian stack. Here, unlike the pyramid introduced in a previous project, the images are never downsampled so the results are all the same dimension.
+            The Gaussian Stack is created by applying the Gaussian filter at each level. The Laplacian is then the differences between subsequent gaussian filtered images.
+            Using the same orange and apple pictures from Szelski's 'Oraple', we can create the same stack. I also did the same vertical split.
+        </p>
+
+        <div class="gallery">
+            <figure>
+                <img src="proj2_output/2.3/apple0.jpg" alt="">
+                <figcaption>The Apple Level 0</figcaption>
+            </figure>
+            <figure>
+                <img src="proj2_output/2.3/orange0.jpg" alt="">
+                <figcaption>The Orange Level 0</figcaption>
+            </figure>
+            <figure>
+                <img src="proj2_output/2.3/blended0.jpg" alt="">
+                <figcaption>The Combined Level 0</figcaption>
+            </figure>
+        </div>
+        <div class="gallery">
+            <figure>
+                <img src="proj2_output/2.3/apple2.jpg" alt="">
+                <figcaption>The Apple Level 2</figcaption>
+            </figure>
+            <figure>
+                <img src="proj2_output/2.3/orange2.jpg" alt="">
+                <figcaption>The Orange Level 2</figcaption>
+            </figure>
+            <figure>
+                <img src="proj2_output/2.3/blended2.jpg" alt="">
+                <figcaption>The Combined Level 2</figcaption>
+            </figure>
+        </div>
+        <div class="gallery">
+            <figure>
+                <img src="proj2_output/2.3/apple4.jpg" alt="">
+                <figcaption>The Apple Level 4</figcaption>
+            </figure>
+            <figure>
+                <img src="proj2_output/2.3/orange4.jpg" alt="">
+                <figcaption>The Orange Level 4</figcaption>
+            </figure>
+            <figure>
+                <img src="proj2_output/2.3/blended4.jpg" alt="">
+                <figcaption>The Combined Level 4</figcaption>
+            </figure>
+        </div>
+        <div class="gallery">
+            <figure>
+                <img src="proj2_output/2.3/apple_full.jpg" alt="">
+                <figcaption>The Apple</figcaption>
+            </figure>
+            <figure>
+                <img src="proj2_output/2.3/orange_full.jpg" alt="">
+                <figcaption>The Orange</figcaption>
+            </figure>
+            <figure>
+                <img src="proj2_output/2.3/appleorange_full.jpg" alt="">
+                <figcaption>The Combined</figcaption>
+            </figure>
+        </div>
+        <h3>Part2.4: Multiresolution Blending</h3>
+        <p>
+            Of course, the most glaring issue is that it's so obvious where the blending is happening! That's no good if we want to make a seamless transition between
+            the apple and the orange(or any other image). So instead of just mixing the two, we mix in a mask as well to help blend them better! Of course, the mask goes through the same process as the images.
+            The simplest mask, and the one that will result in the Oraple, is a vertical line. Horizontal is equally easy.
+        </p>
+
+        <div class="gallery">
+            <figure>
+                <img src="proj2_output/appleorange/apple_full.jpg" alt="">
+                <figcaption>The Apple with mask</figcaption>
+            </figure>
+            <figure>
+                <img src="proj2_output/appleorange/orange_full.jpg" alt="">
+                <figcaption>The Orange with mask</figcaption>
+            </figure>
+            <figure>
+                <img src="proj2_output/appleorange/both_full.jpg" alt="">
+                <figcaption>The Combined</figcaption>
+            </figure>
+        </div>
+        <p>So of course, what if we take it up one notch</p>
+        <div class="gallery">
+            <figure>
+                <img src="proj2_output/cellodaruan/cello_full.jpg" alt="">
+                <figcaption>The Cello with mask</figcaption>
+            </figure>
+            <figure>
+                <img src="proj2_output/cellodaruan/daruan_full.jpg" alt="">
+                <figcaption>The Daruan with mask</figcaption>
+            </figure>
+            <figure>
+                <img src="proj2_output/cellodaruan/both_full.jpg" alt="">
+                <figcaption>The Combined</figcaption>
+            </figure>
+        </div>
+        <p>Well...actually what about a couple notches more! With a unique mask that is black and white! Black corresponds to image 1 and white corresponds to image 2!</p>
+        <div class="gallery">
+            <figure>
+                <img src="proj2_data/hsr_phainon_splashart.png" alt="">
+                <figcaption>HSR Character Phainon's Splashart</figcaption>
+            </figure>
+            <figure>
+                <img src="proj2_data/hsr_sunday_splashart.png" alt="">
+                <figcaption>HSR Character Sunday's Splashart</figcaption>
+            </figure>
+            <figure>
+                <img src="proj2_data/mask_hsr.png" alt="">
+                <figcaption>The Mask</figcaption>
+            </figure>
+        </div>
+        <p>Uhh...nonwhite-black spots in the Mask are because those are parts I missed while painting it...This took wayy too long by the way. And it isn't even that good because the images aren't the same resolution :(.</p>
+        <div class="gallery">
+            <figure>
+                <img src="proj2_output/hsr_sunday_splasharthsr_phainon_splashart/hsr_phainon_splashart0.jpg" alt="">
+                <figcaption>Level 0</figcaption>
+            </figure>
+            <figure>
+                <img src="proj2_output/hsr_sunday_splasharthsr_phainon_splashart/hsr_sunday_splashart0.jpg" alt="">
+                <figcaption>Level 0</figcaption>
+            </figure>
+            <figure>
+                <img src="proj2_output/hsr_sunday_splasharthsr_phainon_splashart/blended0.jpg" alt="">
+                <figcaption>Level 0</figcaption>
+            </figure>
+        </div>
+
+        <div class="gallery">
+            <figure>
+                <img src="proj2_output/hsr_sunday_splasharthsr_phainon_splashart/hsr_phainon_splashart2.jpg" alt="">
+                <figcaption>Level 2</figcaption>
+            </figure>
+            <figure>
+                <img src="proj2_output/hsr_sunday_splasharthsr_phainon_splashart/hsr_sunday_splashart2.jpg" alt="">
+                <figcaption>Level 2</figcaption>
+            </figure>
+            <figure>
+                <img src="proj2_output/hsr_sunday_splasharthsr_phainon_splashart/blended2.jpg" alt="">
+                <figcaption>Level 2</figcaption>
+            </figure>
+        </div>
+
+        <div class="gallery">
+            <figure>
+                <img src="proj2_output/hsr_sunday_splasharthsr_phainon_splashart/hsr_phainon_splashart4.jpg" alt="">
+                <figcaption>Level 4</figcaption>
+            </figure>
+            <figure>
+                <img src="proj2_output/hsr_sunday_splasharthsr_phainon_splashart/hsr_sunday_splashart4.jpg" alt="">
+                <figcaption>Level 4</figcaption>
+            </figure>
+            <figure>
+                <img src="proj2_output/hsr_sunday_splasharthsr_phainon_splashart/blended4.jpg" alt="">
+                <figcaption>Level 4</figcaption>
+            </figure>
+        </div>
+
+        <div class="gallery">
+            <figure>
+                <img src="proj2_output/hsr_sunday_splasharthsr_phainon_splashart/hsr_phainon_splashart_full.jpg" alt="">
+                <figcaption>Final</figcaption>
+            </figure>
+            <figure>
+                <img src="proj2_output/hsr_sunday_splasharthsr_phainon_splashart/hsr_sunday_splashart_full.jpg" alt="">
+                <figcaption>Final</figcaption>
+            </figure>
+            <figure>
+                <img src="proj2_output/hsr_sunday_splasharthsr_phainon_splashart/blended_full.jpg" alt="">
+                <figcaption>FInal</figcaption>
+            </figure>
+        </div>
+    </main>
+</body>
+</html>
