@@ -1,0 +1,723 @@
+﻿---
+---
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Project 3</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            min-height: 100vh;
+            /* gradient background */
+            background-image: linear-gradient(160deg, #03d0c080 0%, #2bb0d080 50%, #3a233880 100%);
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+        }
+
+        main {
+            padding: 20px;
+        }
+
+        img {
+            max-width: 100%;
+            height: auto;
+        }
+
+        video {
+            max-width: 640px;
+            width: 100%;
+        }
+
+        .gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 12px;
+            margin: 16px 0;
+        }
+
+            .gallery figure {
+                margin: 0;
+                text-align: center;
+                max-width: 450px; /* maximum width */
+                max-height: 450px; /* maximum height */
+            }
+            .gallery figure2 {
+                margin: 0;
+                text-align: center;
+                max-width: 200px; /* maximum width */
+                max-height: 200px; /* maximum height */
+            }
+
+            .gallery figcaption {
+                margin-top: 6px;
+                font-size: 14px;
+                text-align: center;
+            }
+
+            .gallery figure img {
+                display: block;
+                width: 80%;
+                aspect-ratio: 1 / 1;
+                object-fit: contain;
+            }
+            .gallery figure2 img {
+                display: block;
+                width: 75%;
+                aspect-ratio: 1 / 1;
+                object-fit: contain;
+            }
+            /* Vertical gallery: one image per row, centered */
+        .gallery.vertical {
+            grid-template-columns: 1fr;
+            justify-items: center;
+        }
+
+        .gallery.vertical figure {
+            max-width: 640px;
+            max-height: none;
+            width: 100%;
+        }
+
+        .gallery.vertical figure img {
+            width: 100%;
+            aspect-ratio: auto;
+            margin: 0 auto;
+        }
+        .gallery.animation figure img {
+            transition: transform 0.3s ease;
+        }
+
+        .gallery.animation figure:hover img {
+            transform: scale(0.3);
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+        .gallery.animation figure img {
+            transition: none;
+        }
+        }
+        /* ---------- Tabs ---------- */
+        .tabs {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            display: flex;
+            gap: 8px;
+            padding: 10px 20px;
+            background: rgba(255, 255, 255, 0.6);
+            backdrop-filter: blur(6px);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.15);
+        }
+
+        .tab {
+            font: inherit;
+            font-size: 16px;
+            padding: 8px 18px;
+            border: 1px solid rgba(0, 0, 0, 0.25);
+            border-radius: 6px;
+            background: transparent;
+            cursor: pointer;
+        }
+
+            .tab:hover {
+                background: rgba(255, 255, 255, 0.6);
+            }
+
+            .tab[aria-selected="true"] {
+                background: #1a1a1a;
+                color: #fff;
+                border-color: #1a1a1a;
+            }
+
+        .tab-panel[hidden] {
+            display: none;
+        }
+    </style>
+
+    <script>
+        window.MathJax = {
+            tex: { inlineMath: [['$', '$'], ['\\(', '\\)']] }
+        };
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async></script>
+</head>
+<body>
+    {% include header.html %}
+
+    <nav class="tabs" role="tablist">
+        <button class="tab" role="tab" data-target="part-a" aria-selected="true">Part A</button>
+        <button class="tab" role="tab" data-target="part-b" aria-selected="false">Part B</button>
+    </nav>
+
+    <main>
+        <h1>Project 3</h1>
+
+        <section id="part-a" class="tab-panel" role="tabpanel">
+            <h2>Part A: Exploring the Power of Flow Models</h2>
+            <p>
+                Flow-based generative models or Flow models are a generative model used in ML that models a probability distribution by leveraging normalizing flow. Normalizing flows essentially takes in a simple base distribution
+                , Gaussian for example, and transforms it into a target complex distribution using a sequence of invertible transformations. This lets the model learn the probability density of the data.
+            </p>
+
+            <p>In this (part of the) project, I will be using PixNerd, a pre-trained text-to-image model. This model can't take in raw text, so I will also be usingQwen3 to encode the text into prompt embeddings.</p>
+
+            <h3>Part 1: Visualizing Training and Sampling</h3>
+            <p>
+                For the optimal-transport(OT) formulation of flow matching, I will use linear interpolation. Let $x_0 \sim N(0,1)$ and $x_1$ be a clean image. Then
+            </p>
+            $$x_t = (1-t)x_0 + tx_1, \quad t \in [0,1].$$
+            <p>Notice that $t=0$ is pure noise and $t=1$ is the clean image.</p>
+            <p>
+                As for generating the training datast, I sample the clean image $x_1$, independent Gaussian noise $x_0$ and $t \sim U[0,1]$. The model recieves $(x_t, t, c)$ using the above linear interpolation
+                and c is a condition. The model is trained to predict the path velocity of $x_1 - x_0$. This makes the loss:
+            </p>
+            $$L(\theta) = \mathbb{E}[||v_{\theta}(x_t,t,c) - (x_1-x_0)||_2^2]$$
+            <p>To refrain from the model's learning becoming temporal, we evaluate based on randomly selected times.</p>
+            <p>
+                Although each training pair defines a straight path, learned sampling trajectories are generally curved since the predicted direction
+                will change with the current image and time. To account for this, I will integrate the velocity field numerically, using Euler steps that recompute the velocity after each update.
+            </p>
+            <h3>Part 1.1: Noise Inputs</h3>
+            <p>Below is my chosen image and the three noisy training inputs.</p>
+            <div class="gallery">
+                <figure>
+                    <img src="parta/output/basephoto.png" alt="self">
+                    <figcaption>base photo</figcaption>
+                </figure>
+                <figure>
+                    <img src="parta/output/t_.25.png" alt="self">
+                    <figcaption>t = 0.25</figcaption>
+                </figure>
+                <figure>
+                    <img src="parta/output/t_.50.png" alt="self">
+                    <figcaption>t = 0.50</figcaption>
+                </figure>
+                <figure>
+                    <img src="parta/output/t_.75.png" alt="self">
+                    <figcaption>t = 0.75</figcaption>
+                </figure>
+            </div>
+            <p>Of course, to compare the effects of our pre-trained model on denoising, we need a baseline.</p>
+            <h3>Part 1.2: Classical denoising</h3>
+            <p>If you may remember from a previous project(hint hint 2), I used a Gaussian blur to denoise a picture before applying convolutions. So lets use that as the baseline!</p>
+            <p>
+                As it turns out, averaging nearby pixels partially cancels independent, zero-mean noise. However, this does mean that stronger blur reduces noise but also removes image detail.
+                Reminder that the other project's low-pass which displayed low-frequency parts of an image was the Gaussian blurred version of said image! Image detail, which is basically the high-pass or high-frequency parts,
+                is what you get from subtracting the Gaussian blur from the original image. But...we aren't given the original image. Hence, this classical denoising using a Gaussian blur really isn't that great.
+            </p>
+            <p>The equation used is as follows:</p>
+            $$\frac{x_t}{t}=x_1 + \frac{1-t}{t}\epsilon, \quad \hat{x}_1^{\text{blur}} = G_{\sigma}(\frac{x_t}{t})$$
+            <p>Where $G_{\sigma}$ is a Gaussian filter with standard deviation $\sigma$. I divide by t to correct the image amplitude.</p>
+            <div class="gallery">
+                <figure>
+                    <img src="parta/output/t_.25.png" alt="self">
+                    <figcaption>t = 0.25</figcaption>
+                </figure>
+                <figure>
+                    <img src="parta/output/t_.50.png" alt="self">
+                    <figcaption>t = 0.50</figcaption>
+                </figure>
+                <figure>
+                    <img src="parta/output/t_.75.png" alt="self">
+                    <figcaption>t = 0.75</figcaption>
+                </figure>
+            </div>
+            <div class="gallery">
+                <figure>
+                    <img src="parta/output/t_.25_8.png" alt="self">
+                    <figcaption>blur sigma = 8</figcaption>
+                </figure>
+                <figure>
+                    <img src="parta/output/t_.50_4.png" alt="self">
+                    <figcaption>blur sigma = 4</figcaption>
+                </figure>
+                <figure>
+                    <img src="parta/output/t_.75_1.png" alt="self">
+                    <figcaption>blur sigma = 1</figcaption>
+                </figure>
+            </div>
+            <h3>Part 1.3: One-step Denoising</h3>
+            <p>Now, lets use the PixNerd model! It comes with a predict_velocity(x,t,c) function that predicts the velocity at the noisy image and time. I then extrapolate to the clean endpoint using one prediction:</p>
+            $$\hat{x}_1 = x_t + (1-t)v_{\theta}(x_t,t,c)$$
+            <p>Since this model is trained with text conditioning, I use the embedding for "a high quality photo".</p>
+            <div class="gallery">
+                <figure>
+                    <img src="parta/output/t_.25.png" alt="self">
+                    <figcaption>t = 0.25</figcaption>
+                </figure>
+                <figure>
+                    <img src="parta/output/t_.50.png" alt="self">
+                    <figcaption>t = 0.50</figcaption>
+                </figure>
+                <figure>
+                    <img src="parta/output/t_.75.png" alt="self">
+                    <figcaption>t = 0.75</figcaption>
+                </figure>
+            </div>
+            <div class="gallery">
+                <figure>
+                    <img src="parta/output/t_.25_onestep.png" alt="self">
+                    <figcaption>onestep</figcaption>
+                </figure>
+                <figure>
+                    <img src="parta/output/t_.50_onestep.png" alt="self">
+                    <figcaption>onestep</figcaption>
+                </figure>
+                <figure>
+                    <img src="parta/output/t_.75_onestep.png" alt="self">
+                    <figcaption>onestep</figcaption>
+                </figure>
+            </div>
+            <p>Already looking a lot cleaner. Even though the .25 and 50 are a still blurry compared to the original photo, you can't see any remnants of the Gaussian noise, unlike the outputs from classical denoising.</p>
+            <h3>Part 1.4: Visualizing Velocity</h3>
+            <p>A picture tells a thousand words. Or, in this case, a bunch of math. Let's see what's going on in the background by visualizing predicted update, the ground truth update, and the error(as a heatmap)!</p>
+
+            <div class="gallery">
+                <figure2>
+                    <img src="parta/output/basephoto.png" alt="self">
+                    <figcaption>onestep</figcaption>
+                </figure2>
+                <div class="gallery vertical">
+                    <figure>
+                        <img src="parta/output/t_.25_visual.png" alt="self">
+                        <figcaption>visualization of t = .25</figcaption>
+                    </figure>
+                    <figure>
+                        <img src="parta/output/t_.50_visual.png" alt="self">
+                        <figcaption>visualization of t = .50</figcaption>
+                    </figure>
+                    <figure>
+                        <img src="parta/output/t_.75_visual.png" alt="self">
+                        <figcaption>visualization of t = .75</figcaption>
+                    </figure>
+                </div>
+            </div>
+
+            <h3>Part 1.5: Iterative Denoising with Euler Sampling</h3>
+            <p>
+                Obviously, one-step isn't perfect. This is due to the learned velocity changing as we move along the path. Instead, take a small step, predict a new velocity, and repeat.
+                Using Euler integration:
+            </p>
+            $$x_{t+h}=x_t+hv_{\theta}(x_t,t,c)$$
+            <p>For this portion, I will use $h=0.02$.</p>
+            <div class="gallery vertical">
+                <figure>
+                    <img src="parta/output/iterative.png" alt="self">
+                    <figcaption>Iterative Denoising, every 5 steps</figcaption>
+                </figure>
+                <figure>
+                    <img src="parta/output/compare.png" alt="self">
+                    <figcaption>Comparison of all outputs</figcaption>
+                </figure>
+            </div>
+
+            <h3>Part 1.6: Generating Images from Noise</h3>
+            <p>
+                Instead of inputting a noised image, what if we input random noise?
+                Then the model will generate an image! Below are 5 results of the prompt "a high quality photo".
+            </p>
+            <div class="gallery">
+                <figure>
+                    <img src="parta/output/generate_180.png" alt="self">
+                    <figcaption>seed = 180</figcaption>
+                </figure>
+                <figure>
+                    <img src="parta/output/generate_181.png" alt="self">
+                    <figcaption>seed = 181</figcaption>
+                </figure>
+                <figure>
+                    <img src="parta/output/generate_182.png" alt="self">
+                    <figcaption>seed = 182</figcaption>
+                </figure>
+                <figure>
+                    <img src="parta/output/generate_183.png" alt="self">
+                    <figcaption>seed = 183</figcaption>
+                </figure>
+                <figure>
+                    <img src="parta/output/generate_184.png" alt="self">
+                    <figcaption>seed = 184</figcaption>
+                </figure>
+            </div>
+            <p>Wow...forget uncanny valley, fever dream much? These photos obviously don't look real at all(okay, number 5 is ok if you only took a quick glance). This is where the conditional part of the model plays a key role.</p>
+
+            <h2>Part 2: Conditional Generation and Guidance</h2>
+            <p>
+                Conditional generation means generating an image given information such as a text prompt.
+                Part 1 used a fixed prompt of "a high quality photo". Now, I will strengthen the effect of that prompt using classifier-free guidance (CFG)
+            </p>
+            <h3>Part 2.1: CFG</h3>
+            <p>Now, we're going to evalue teh same image and time with the conditional prompt, $v_c$, and an empty-string prompt, $v_u$.</p>
+            $$v_{cfg} = v_c + + w(v_c - v_u)$$
+            <p>Let $w=7$ and the Euler step size stay as $h=0.02$ Then, I generate the 5 photos with the same seed.</p>
+            <div class="gallery">
+                <figure>
+                    <img src="parta/output/generate_180cfg.png" alt="self">
+                    <figcaption>seed = 180</figcaption>
+                </figure>
+                <figure>
+                    <img src="parta/output/generate_181cfg.png" alt="self">
+                    <figcaption>seed = 181</figcaption>
+                </figure>
+                <figure>
+                    <img src="parta/output/generate_182cfg.png" alt="self">
+                    <figcaption>seed = 182</figcaption>
+                </figure>
+                <figure>
+                    <img src="parta/output/generate_183cfg.png" alt="self">
+                    <figcaption>seed = 183</figcaption>
+                </figure>
+                <figure>
+                    <img src="parta/output/generate_184cfg.png" alt="self">
+                    <figcaption>seed = 184</figcaption>
+                </figure>
+            </div>
+            <p>Okay, less fever dream, a little more uncanny valley. This is a lot closer to realistic photos of people than the previous one. But generating images like this is pretty uncontrollable in terms of making an image look the way we envision it. What if we gave a starting image and asked it to edit something in?</p>
+            <h2>Part 3: Creative Applications</h2>
+            <h3>Part 3.1: Image-to-Image Editing</h3>
+            <p>
+                In part 1.5, I took a real image, added noise, and then denoised it. This is basically the method to allow edits to exisitng images. The more noise, the larger the edit will be.
+                This works because in order to denoise an image, the flow model must to some extent "hallucinate" new things; the model has to be "creative."
+            </p>
+            <p> As a base, I'll take the original Campanile image and two of my own, noise it a little, and force it back to being 'real' with a generic photo prompt. This is inspired by the SDEdit algorithm.</p>
+            <div class="gallery vertical">
+                <figure>
+                    <img src="parta/output/campanile_top.png" alt="self">
+                    <figcaption></figcaption>
+                </figure>
+                <figure>
+                    <img src="parta/output/campanile_bot.png" alt="self">
+                    <figcaption>Campanile edits</figcaption>
+                </figure>
+                <figure>
+                    <img src="parta/output/austin_top.png" alt="self">
+                    <figcaption></figcaption>
+                </figure>
+                <figure>
+                    <img src="parta/output/austin_bot.png" alt="self">
+                    <figcaption>Austin edits</figcaption>
+                </figure>
+                <figure>
+                    <img src="parta/output/wuwa_top.png" alt="self">
+                    <figcaption></figcaption>
+                </figure>
+                <figure>
+                    <img src="parta/output/wuwa_bot.png" alt="self">
+                    <figcaption>Wuthering Waves ingame Screenshot edits</figcaption>
+                </figure>
+            </div>
+            <p> As it turns out, this procedure works particularly well if we start with a nonrealistic image.</p>
+            <div class="gallery vertical">
+                <figure>
+                    <img src="parta/output/webimage_top.png" alt="self">
+                    <figcaption></figcaption>
+                </figure>
+                <figure>
+                    <img src="parta/output/webimage_bot.png" alt="self">
+                    <figcaption>Webimage edits</figcaption>
+                </figure>
+                <figure>
+                    <img src="parta/output/city_top.png" alt="self">
+                    <figcaption></figcaption>
+                </figure>
+                <figure>
+                    <img src="parta/output/city_bot.png" alt="self">
+                    <figcaption>Handdrawn city edits</figcaption>
+                </figure>
+                <figure>
+                    <img src="parta/output/tree_top.png" alt="self">
+                    <figcaption></figcaption>
+                </figure>
+                <figure>
+                    <img src="parta/output/tree_bot.png" alt="self">
+                    <figcaption>Handdrawn tree edits</figcaption>
+                </figure>
+            </div>
+
+            <h3>Part 3.2: Text-guided Image Editing</h3>
+            <p>Obviously, the model isn't the creative. That's where we(you and me, the human) come in! Using text prompts, we can nudge the model in a direction for creativity.</p>
+            <div class="gallery vertical">
+                <figure>
+                    <img src="parta/output/campanile_guided_top.png" alt="self">
+                    <figcaption></figcaption>
+                </figure>
+                <figure>
+                    <img src="parta/output/campanile_guided_bot.png" alt="self">
+                    <figcaption>Campanile to "the Washington Monument on a clear day"</figcaption>
+                </figure>
+                <figure>
+                    <img src="parta/output/austin_guided_top.png" alt="self">
+                    <figcaption></figcaption>
+                </figure>
+                <figure>
+                    <img src="parta/output/austin_guided_bot.png" alt="self">
+                    <figcaption>Austin to "Closeup of a keyboard on a glass desk"</figcaption>
+                </figure>
+                <figure>
+                    <img src="parta/output/wuwa_guided_top.png" alt="self">
+                    <figcaption></figcaption>
+                </figure>
+                <figure>
+                    <img src="parta/output/wuwa_guided_bot.png" alt="self">
+                    <figcaption>Wuthering Waves ingame Screenshot to "sunrise on a snowy mountain peak"</figcaption>
+                </figure>
+            </div>
+            <h3>Part 3.3: Visual Anagrams</h3>
+            <p>Let's try another image editing: visual anagrams! Images that look like one thing in one direction, and something else in another direction. The velocity algorthim for this is:</p>
+            $$v_1= \text{CFG velocity}(x_t, t, p_1)$$
+            $$v_2 =\text{flip}(\text{CFG velcotiy}(\text{flip}(x_t),t,p_2))$$
+            $$v = \frac{v_1+v_2}/2$$
+            <div class="gallery vertical">
+                <figure>
+                    <img src="parta/output/man_litho.png" alt="self">
+                    <figcaption></figcaption>
+                </figure>
+                <figure>
+                    <img src="parta/output/horse_litho.png" alt="self">
+                    <figcaption></figcaption>
+                </figure>
+                <figure>
+                    <img src="parta/output/valley_watercolor.png" alt="self">
+                    <figcaption></figcaption>
+                </figure>
+                <figure>
+                    <img src="parta/output/cat_charcoal.png" alt="self">
+                    <figcaption></figcaption>
+                </figure>
+            </div>
+            <h3>Part 3.4: Hybrid Images</h3>
+            <p>
+                Now, let's create hybrid images! Similar to the technique used in 3.3, for this one we create an image that, when viewed up close and viewed faraway, look different.
+                Essentially, we'll predict the velocity with two different text prompts, and then combine the low frequencies from one velocity estimate with the high frequencies of the other.
+            </p>
+            $$v_1 = \text{CFG velocity}(x_t, t, p_1)$$
+            $$v_2 = \text{CFG velocity}(x_t, t, p_2)$$
+            $$v = f_{\text{lowpass}}(v_1) + f_{\text{highpass}}(v_2)$$
+            <div class="gallery animation">
+                <figure>
+                    <img src="parta/output/skull.png" alt="self">
+                    <figcaption></figcaption>
+                </figure>
+                <figure>
+                    <img src="parta/output/forest.png" alt="self">
+                    <figcaption></figcaption>
+                </figure>
+                <figure>
+                    <img src="parta/output/ship.png" alt="self">
+                    <figcaption></figcaption>
+                </figure>
+                <figure>
+                    <img src="parta/output/coffee.png" alt="self">
+                    <figcaption></figcaption>
+                </figure>
+            </div>
+
+        </section>
+
+        <section id="part-b" class="tab-panel" role="tabpanel" hidden>
+            <h2>Part B: Flow Matching from Scratch</h2>
+            <p>Now that we've experimented around with a pre-trained one, its time to make our own!</p>
+            <p>Slightly unrelated note, I give up on trying to using singular I versus collective we when writing. We just sounds...better for some reason. Or at least, comes more natural.</p>
+            <p>Life is hard. Life is Long. (iykyk)</p>
+            <h2>Part 1: Training a single-step denoising UNet</h2>
+            <p>
+                Let us train a UNet that takes in a noisy image and maps it to a clean image. We will optimize over L2.
+                For simplicity, we'll be doing a denoising-to-digits UNet. The graph of the UNet is as follows:
+            </p>
+            <div class="gallery vertical">
+                <figure>
+                    <img src="partb/output/unet_graph.png" alt="self">
+                    <figcaption></figcaption>
+                </figure>
+                <figure>
+                    <img src="partb/output/unet_ops.png" alt="self">
+                    <figcaption></figcaption>
+                </figure>
+            </div>
+            <h3>Part 1.2: Using the UNet to Train a Denoiser</h3>
+            <p>
+                To train our denoiser, we need to generate training data pairs of (noised, clean). For the purposes of this project, our
+                clean data will be MNIST digits. Let's visualize what the nosied version of some data would look like at different $\sigma$ values.
+            </p>
+            <div class="gallery">
+                <figure>
+                    <img src="partb/output/noised.png" alt="self">
+                    <figcaption>Noising with $sigma=[0.0, 0.2, 0.4, 0.5, 0.6, 0.8, 1.0]$</figcaption>
+                </figure>
+            </div>
+            <h3>Part 1.2.1: Training</h3>
+            <p>
+                Training time! Important stuff: training dataset is shuffled, noise = 0.5, hidden dimension = 128,  Adam optimizer with 1e-4 lr, 5 epochs, 256 batch size
+            </p>
+            <p>Below are outputs of the model at different epochs + the loss graph. You can see it improve as training continues.</p>
+            <div class="gallery vertical">
+                <figure>
+                    <img src="partb/output/unet_epoch1.png" alt="self">
+                    <figcaption>Epoch 1, clean/noised/prediction</figcaption>
+                </figure>
+                <figure>
+                    <img src="partb/output/unet_epoch5.png" alt="self">
+                    <figcaption>Epoch 5, clean/noised/prediction</figcaption>
+                </figure>
+                <figure>
+                    <img src="partb/output/unet_loss.png" alt="self">
+                    <figcaption>Training loss graph</figcaption>
+                </figure>
+            </div>
+            <h3>Part 1.2.2: Out of Distribution Testing</h3>
+            <p>What happens if we input images that our denoiser wasn't trained on? Specifically, the blurs at other levels.</p>
+            <div class="gallery vertical">
+                <figure>
+                    <img src="partb/output/ood_1.png" alt="self">
+                    <figcaption></figcaption>
+                </figure>
+                <figure>
+                    <img src="partb/output/ood_7.png" alt="self">
+                    <figcaption></figcaption>
+                </figure>
+                <figure>
+                    <img src="partb/output/ood_2.png" alt="self">
+                    <figcaption>Noised with $sigma=[0.0, 0.2, 0.4, 0.5, 0.6, 0.8, 1.0]$, noised/prediction</figcaption>
+                </figure>
+            </div>
+            <p>Unsuprisingly, the model performance drops at high noise.</p>
+            <h3>Part 1.2.3: Denoising Pure Noise</h3>
+            <p>
+                Let's make denoising a generative task with an input of pure, random Gaussian noise.
+            </p>
+            <div class="gallery vertical">
+                <figure>
+                    <img src="partb/output/unet_epoch1_pn.png" alt="self">
+                    <figcaption>Epoch 1, noised/predictoon</figcaption>
+                </figure>
+                <figure>
+                    <img src="partb/output/unet_epoch5_pn.png" alt="self">
+                    <figcaption>Epoch 5, clean/noised/prediction</figcaption>
+                </figure>
+                <figure>
+                    <img src="partb/output/unet_loss_pn.png" alt="self">
+                    <figcaption>Loss graph</figcaption>
+                </figure>
+            </div>
+            <p>Well....that didn't really do much. If anything at all. It estimates a vague 8 for every input. This might be because of how MSE work which takes the average across all samples.</p>
+            <p>
+                Ever seen one of those 7-stick number lights (the 7 sticks are arranged in the figure of an 8). For the most part, a lot of the numbers overlap on this number light.
+                The same holds true(albeit, less to an extent) for numbers in general.
+            </p>
+            <h2>Part 2: Training a Flow Matching Model</h2>
+            <p>
+                This one-step doesn't work well for generative tasks. Instead, we should iteratively denoise the image. So lets do that with flow matching.
+                We will iteratively denoise an image by training a UNet model to predict the `flow' from our noisy data to clean data.
+                In our flow matching setup, we sample a pure noise image and generate a realistic image. Intermediate noisy samples are constructed
+                via linear interpolation between noisy and clean.
+            </p>
+            <h3>Part 2.1: Time Conditioned UNet</h3>
+            <p>We inject a scalar $t$ into the UNet to condition it:</p>
+            <div class="gallery">
+                <figure>
+                    <img src="partb/output/unet_graph_time.png" alt="self">
+                    <figcaption>Graph of TC-UNet</figcaption>
+                </figure>
+                <figure>
+                    <img src="partb/output/fcblock.png" alt="self">
+                    <figcaption>Structure of new FCBlock</figcaption>
+                </figure>
+            </div>
+            <p>Then, the training...The only big change here is a scheduler that decreases the learing rate from 1e-2 to about 1e-3 on a logarithimic scale.</p>
+            <div class="gallery vertical">
+                <figure>
+                    <img src="partb/output/unet_epoch1_tc.png" alt="self">
+                    <figcaption>Epoch 1</figcaption>
+                </figure>
+                <figure>
+                    <img src="partb/output/unet_epoch5_tc.png" alt="self">
+                    <figcaption>Epoch 5</figcaption>
+                </figure>
+                <figure>
+                    <img src="partb/output/unet_epoch10_tc.png" alt="self">
+                    <figcaption>Epoch 5</figcaption>
+                </figure>
+                <figure>
+                    <img src="partb/output/unet_loss_tc.png" alt="self">
+                    <figcaption>Loss graph</figcaption>
+                </figure>
+            </div>
+            <h3>Part 3.4: Adding Class Conditioning</h3>
+            <p>
+                We can improve our results by adding class conditioning to nudge the model towards whatever condition is set. Depending on the class, we turn on or off weights. Of course, to make sure this model
+                works regardless of whether there is a condition, we implement a 10% dropout.
+            </p>
+            <div class="gallery vertical">
+                <figure>
+                    <img src="partb/output/unet_epoch1_cc.png" alt="self">
+                    <figcaption>Epoch 1</figcaption>
+                </figure>
+                <figure>
+                    <img src="partb/output/unet_epoch5_cc.png" alt="self">
+                    <figcaption>Epoch 5</figcaption>
+                </figure>
+                <figure>
+                    <img src="partb/output/unet_epoch10_cc.png" alt="self">
+                    <figcaption>Epoch 5</figcaption>
+                </figure>
+                <figure>
+                    <img src="partb/output/unet_loss_cc.png" alt="self">
+                    <figcaption>Loss graph</figcaption>
+                </figure>
+            </div>
+            <p>Remember that scheduler? What if we get rid of it? Since the learning rate of 1e-2 is probably too strong, let's take the geometric average between the largest and smallest learning rate used. This will be about 3.16e-3</p>
+
+            <div class="gallery vertical">
+                <figure>
+                    <img src="partb/output/unet_epoch1_cc_ns.png" alt="self">
+                    <figcaption>Epoch 1</figcaption>
+                </figure>
+                <figure>
+                    <img src="partb/output/unet_epoch5_cc_ns.png" alt="self">
+                    <figcaption>Epoch 5</figcaption>
+                </figure>
+                <figure>
+                    <img src="partb/output/unet_epoch10_cc_ns.png" alt="self">
+                    <figcaption>Epoch 5</figcaption>
+                </figure>
+                <figure>
+                    <img src="partb/output/unet_loss_cc_ns.png" alt="self">
+                    <figcaption>Loss graph</figcaption>
+                </figure>
+            </div>
+        </section>
+
+       
+    </main>
+
+    <script>
+        (function () {
+            const tabs = document.querySelectorAll('.tab');
+            const panels = document.querySelectorAll('.tab-panel');
+
+            function show(id, updateHash) {
+                // fall back to the first panel if the id is unknown
+                if (!document.getElementById(id)) id = panels[0].id;
+
+                panels.forEach(p => { p.hidden = p.id !== id; });
+                tabs.forEach(t => {
+                    t.setAttribute('aria-selected', t.dataset.target === id ? 'true' : 'false');
+                });
+
+                if (updateHash) history.replaceState(null, '', '#' + id);
+                window.scrollTo(0, 0);
+            } 
+
+            tabs.forEach(t => t.addEventListener('click', () => show(t.dataset.target, true)));
+
+            // open the right tab from the URL (e.g. index.html#part-b)
+            show(location.hash.slice(1) || 'part-a', false);
+            window.addEventListener('hashchange', () => show(location.hash.slice(1), false));
+        })();
+    </script>
+</body>
+</html>

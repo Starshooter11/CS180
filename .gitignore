@@ -1,0 +1,29 @@
+# --- Jekyll build output ---
+# Generated from the source files on every build; GitHub Pages builds its own.
+_site/
+.jekyll-cache/
+.jekyll-metadata
+
+# --- Claude Code local config ---
+.claude/
+
+# --- Editor backup / swap / undo files (vim) ---
+*~
+*.swp
+*.swo
+.*.un~
+
+# --- OS cruft ---
+.DS_Store
+Thumbs.db
+desktop.ini
+
+*.py
+*.ipynb
+*.tif
+*.cpython-313.py
+*.zip
+
+Project1/proj1_data
+
+Discussion Worksheets/
